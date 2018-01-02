@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 
-import { cmd, niceDate, removeIndentation, isLink } from '../src/utils'
+import { cmd, niceDate, removeIndentation, isLink, getInt } from '../src/utils'
 
 describe('cmd', () => {
   it('runs a command', async () => {
@@ -37,5 +37,22 @@ describe('isLink', () => {
 
   it('returns false for non-links', () => {
     expect(isLink('not a link')).to.equal(false)
+  })
+})
+
+describe('getInt', () => {
+  it('returns correct integer when recieving a string or number', () => {
+    expect(getInt(5)).to.equal(5)
+    expect(getInt('-5')).to.equal(-5)
+    expect(getInt('5.0')).to.equal(5)
+    expect(getInt('3.7')).to.equal(3) // parseInt will floor a float value.
+  })
+
+  it('returns fallback when recieving something odd', () => {
+    expect(getInt('', 1)).to.equal(1)
+    expect(getInt('test', 1)).to.equal(1)
+    expect(getInt(NaN, 5)).to.equal(5)
+    expect(getInt(undefined, 9)).to.equal(9)
+    expect(getInt(null)).to.equal(0) // 0 is default
   })
 })

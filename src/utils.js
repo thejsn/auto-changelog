@@ -15,6 +15,16 @@ export function cmd (string) {
   })
 }
 
+/**
+ * Make sure something is an integer, with a fallback.
+ * Helper to increase test coverage.
+ * @param {*} something
+ * @param {Integer} fallback
+ */
+export function getInt (something, fallback = 0) {
+  return parseInt(something) || fallback
+}
+
 export function niceDate (string) {
   const date = new Date(string)
   const day = date.getDate()
