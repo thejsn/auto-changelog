@@ -1,4 +1,4 @@
-import { cmd, isLink } from './utils'
+import { cmd, isLink, getInt } from './utils'
 
 const COMMIT_SEPARATOR = '__AUTO_CHANGELOG_COMMIT_SEPARATOR__'
 const MESSAGE_SEPARATOR = '__AUTO_CHANGELOG_MESSAGE_SEPARATOR__'
@@ -6,6 +6,7 @@ const LOG_FORMAT = COMMIT_SEPARATOR + '%H%n%D%n%aI%n%an%n%ae%n%B' + MESSAGE_SEPA
 const MATCH_COMMIT = /(.*)\n(.*)\n(.*)\n(.*)\n(.*)\n([\S\s]+)/
 const MATCH_STATS = /(\d+) files? changed(?:, (\d+) insertions?...)?(?:, (\d+) deletions?...)?/
 const TAG_PREFIX = 'tag: '
+const VERSION_PATTERN = /v(\d+)\.(\d+)\.(\d+)/
 
 // https://help.github.com/articles/closing-issues-via-commit-messages
 const DEFAULT_FIX_PATTERN = /(?:close[sd]?|fixe?[sd]?|resolve[sd]?)\s(?:#(\d+)|(https?:\/\/.+?\/(?:issues|pull|pull-requests|merge_requests)\/(\d+)))/gi
@@ -48,7 +49,7 @@ function parseCommit (commit, origin, options = {}) {
     author,
     email,
     date,
-    tag: getTag(refs),
+    tag: getTag(refs, options),
     subject: getSubject(message),
     message: message.trim(),
     fixes: getFixes(message, origin, options),
@@ -58,11 +59,25 @@ function parseCommit (commit, origin, options = {}) {
   }
 }
 
-function getTag (refs) {
+function getTag (refs, options = {}) {
   if (!refs) return null
   for (let ref of refs.split(', ')) {
     if (ref.indexOf(TAG_PREFIX) === 0) {
-      return ref.replace(TAG_PREFIX, '')
+      let pattern = VERSION_PATTERN
+      // take version pattern from options
+      if (typeof options.versionPattern !== 'undefined') {
+        pattern = new RegExp(options.versionPattern)
+      }
+
+      const parts = ref.match(pattern)
+      if (parts === null) {
+        return null
+      }
+
+      return 'v' +
+              getInt(parts[1], 0) + '.' +
+              getInt(parts[2], 0) + '.' +
+              getInt(parts[3], 0)
     }
   }
   return null
@@ -76,9 +91,9 @@ function getStats (stats) {
   if (!stats) return {}
   const [, files, insertions, deletions] = stats.match(MATCH_STATS)
   return {
-    files: parseInt(files || 0),
-    insertions: parseInt(insertions || 0),
-    deletions: parseInt(deletions || 0)
+    files: getInt(files, 0),
+    insertions: getInt(insertions, 0),
+    deletions: getInt(deletions, 0)
   }
 }
 

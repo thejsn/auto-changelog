@@ -15,6 +15,7 @@ import {
 const parseCommits = __get__('parseCommits')
 const getFixes = __get__('getFixes')
 const getMerge = __get__('getMerge')
+const getTag = __get__('getTag')
 
 describe('fetchCommits', () => {
   it('fetches commits', async () => {
@@ -213,6 +214,32 @@ describe('getMerge', () => {
         message: 'fix(component): re-export createSchema from editor-core',
         href: 'https://bitbucket.org/user/repo/pull-requests/4518'
       })
+    })
+  })
+})
+
+describe('getTag', () => {
+  it('returns null if there is no tag', () => {
+    const refs = 'HEAD -> master, origin/master'
+    expect(getTag(refs)).to.equal(null)
+    expect(getTag(null)).to.equal(null)
+  })
+
+  it('returns a version from tag', () => {
+    const refs = 'tag: v1.0.0'
+    expect(getTag(refs)).to.equal('v1.0.0')
+  })
+
+  describe('Custom version pattern', () => {
+    it('returns null if tag doesn\'t match pattern', () => {
+      const refs = 'tag: Release/1.2.3'
+      expect(getTag(refs)).to.equal(null)
+    })
+
+    it('returns a version from tag', () => {
+      const refs = 'tag: Release/1.2.3'
+      const options = { versionPattern: 'Release/(\\d+)\\.(\\d+)\\.(\\d+)' }
+      expect(getTag(refs, options)).to.equal('v1.2.3')
     })
   })
 })
